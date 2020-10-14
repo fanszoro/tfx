@@ -82,9 +82,10 @@ _EXECUTION_TYPE_RESERVED_KEYS = frozenset(
 _ARTIFACT_TYPE_KEY_STATE = 'state'
 
 # pyformat: disable
-_ConnectionConfigType = Union[
+ConnectionConfigType = Union[
     metadata_store_pb2.ConnectionConfig,
-    metadata_store_pb2.MetadataStoreClientConfig]
+    metadata_store_pb2.MetadataStoreClientConfig,
+    mlmd_service_pb2.MLMDServiceClientConfig]
 # pyformat: enable
 
 
@@ -135,7 +136,7 @@ def mysql_metadata_connection_config(
 class Metadata(object):
   """Helper class to handle metadata I/O."""
 
-  def __init__(self, connection_config: _ConnectionConfigType) -> None:
+  def __init__(self, connection_config: ConnectionConfigType) -> None:
     self._connection_config = connection_config
     self._store = None
 
