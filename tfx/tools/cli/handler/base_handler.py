@@ -173,6 +173,18 @@ class BaseHandler(with_metaclass(abc.ABCMeta, object)):
     handler_home_dir = engine_flag.upper() + '_HOME'
     if handler_home_dir in os.environ:
       return os.environ[handler_home_dir]
+    return os.path.join(os.environ['HOME'], 'tfx', engine_flag, '')
+
+  def _get_deprecated_handler_home(self) -> Text:
+    """Sets old handler home for compatibility.
+
+    Returns:
+      Path to handler home directory.
+    """
+    engine_flag = self.flags_dict[labels.ENGINE_FLAG]
+    handler_home_dir = engine_flag.upper() + '_HOME'
+    if handler_home_dir in os.environ:
+      return os.environ[handler_home_dir]
     return os.path.join(os.environ['HOME'], engine_flag, '')
 
   def _subprocess_call(self,
@@ -196,6 +208,21 @@ class BaseHandler(with_metaclass(abc.ABCMeta, object)):
     # Check if pipeline folder exists.
     exists = fileio.exists(handler_pipeline_path)
     if required and not exists:
+      # Check old style pipeline directory and give some warning.
+      old_handler_pipeline_path = os.path.join(
+          self._get_deprecated_handler_home(), pipeline_name)
+      if fileio.exists(old_handler_pipeline_path):
+        click.echo(
+            '[WARNING] Pipeline "{pipeline_name}" was found in "{old_path}", '
+            'but the location that TFX stores pipeline information was moved '
+            'since TFX 0.25.0.\n'
+            '[WARNING] Please move your file "{old_path}" to the new location '
+            '"{new_path}"'.format(
+                pipeline_name=pipeline_name,
+                old_path=old_handler_pipeline_path,
+                new_path=handler_pipeline_path),
+            err=True)
+
       sys.exit('Pipeline "{}" does not exist.'.format(pipeline_name))
     elif not required and exists:
       sys.exit('Pipeline "{}" already exists.'.format(pipeline_name))
