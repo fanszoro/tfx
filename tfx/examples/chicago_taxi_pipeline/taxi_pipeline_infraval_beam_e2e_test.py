@@ -27,7 +27,7 @@ from tfx.dsl.components.base import base_driver
 from tfx.dsl.io import fileio
 from tfx.examples.chicago_taxi_pipeline import taxi_pipeline_infraval_beam
 from tfx.orchestration import metadata
-from tfx.orchestration.beam.beam_dag_runner import BeamDagRunner
+from tfx.orchestration.portable.beam_dag_runner import BeamDagRunner
 
 
 class TaxiPipelineInfravalBeamEndToEndTest(tf.test.TestCase):

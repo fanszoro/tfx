@@ -18,9 +18,10 @@ from typing import Callable, List, Optional
 
 from absl import logging
 from tfx.orchestration import metadata
-from tfx.orchestration.experimental.core import task as task_lib
 from tfx.orchestration.experimental.core import task_gen
 from tfx.orchestration.experimental.core import task_gen_utils
+from tfx.orchestration.experimental.core import task_queue as tq
+from tfx.orchestration.experimental.core.proto import task_pb2
 from tfx.orchestration.portable import execution_publish_utils
 from tfx.orchestration.portable.mlmd import execution_lib
 from tfx.proto.orchestration import pipeline_pb2
@@ -39,7 +40,7 @@ class AsyncPipelineTaskGenerator(task_gen.TaskGenerator):
 
   def __init__(self, mlmd_connection: metadata.Metadata,
                pipeline: pipeline_pb2.Pipeline,
-               is_task_id_tracked_fn: Callable[[task_lib.TaskId], bool]):
+               is_task_id_tracked_fn: Callable[[tq.TaskId], bool]):
     """Constructs `AsyncPipelineTaskGenerator`.
 
     Args:
@@ -63,7 +64,7 @@ class AsyncPipelineTaskGenerator(task_gen.TaskGenerator):
     self._pipeline = pipeline
     self._is_task_id_tracked_fn = is_task_id_tracked_fn
 
-  def generate(self) -> List[task_lib.Task]:
+  def generate(self) -> List[task_pb2.Task]:
     """Generates tasks for all executable nodes in the async pipeline.
 
     The returned tasks must have `exec_task` populated. List may be empty if no
@@ -80,8 +81,7 @@ class AsyncPipelineTaskGenerator(task_gen.TaskGenerator):
         # If a task for the node is already tracked by the task queue, it need
         # not be considered for generation again.
         if self._is_task_id_tracked_fn(
-            task_lib.exec_node_task_id_from_pipeline_node(self._pipeline,
-                                                          node)):
+            tq.TaskId.from_pipeline_node(self._pipeline, node)):
           continue
         task = self._generate_task(m, node)
         if task:
@@ -90,7 +90,7 @@ class AsyncPipelineTaskGenerator(task_gen.TaskGenerator):
 
   def _generate_task(
       self, metadata_handler: metadata.Metadata,
-      node: pipeline_pb2.PipelineNode) -> Optional[task_lib.Task]:
+      node: pipeline_pb2.PipelineNode) -> Optional[task_pb2.Task]:
     """Generates a node execution task.
 
     If a node execution is not feasible, `None` is returned.
@@ -144,4 +144,4 @@ class AsyncPipelineTaskGenerator(task_gen.TaskGenerator):
         contexts=resolved_info.contexts,
         input_artifacts=resolved_info.input_artifacts,
         exec_properties=resolved_info.exec_properties)
-    return task_lib.ExecNodeTask.create(self._pipeline, node, execution.id)
+    return task_gen_utils.create_task(self._pipeline, node, execution)

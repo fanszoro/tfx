@@ -145,6 +145,12 @@ class OutputUtilsTest(test_utils.TfxTest):
     self.assertRegex(stateful_working_dir,
                      '.*/test_node/test_run_0/stateful_working_dir')
 
+  def testGetTmpDir(self):
+    tmp_dir = self._output_resolver.get_tmp_dir()
+    fileio.exists(tmp_dir)
+    self.assertRegex(tmp_dir,
+                     '.*/test_node/.temp/')
+
   def testMakeOutputDirsAndRemoveOutputDirs(self):
     output_artifacts = self._output_resolver.generate_output_artifacts(1)
     outputs_utils.make_output_dirs(output_artifacts)
