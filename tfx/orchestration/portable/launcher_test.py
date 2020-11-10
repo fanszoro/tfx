@@ -14,7 +14,6 @@
 """Tests for tfx.orchestration.portable.launcher."""
 import copy
 import os
-from typing import Any, Dict, List, Text
 
 import mock
 import tensorflow as tf
@@ -23,6 +22,7 @@ from tfx.dsl.compiler import constants
 from tfx.orchestration import metadata
 from tfx.orchestration.portable import base_driver
 from tfx.orchestration.portable import base_executor_operator
+from tfx.orchestration.portable import data_types
 from tfx.orchestration.portable import execution_publish_utils
 from tfx.orchestration.portable import inputs_utils
 from tfx.orchestration.portable import launcher
@@ -51,7 +51,7 @@ class _FakeExecutorOperator(base_executor_operator.BaseExecutorOperator):
   SUPPORTED_PLATFORM_CONFIG_TYPE = None
 
   def run_executor(
-      self, execution_info: base_executor_operator.ExecutionInfo
+      self, execution_info: data_types.ExecutionInfo
   ) -> execution_result_pb2.ExecutorOutput:
     self._exec_properties = execution_info.exec_properties
     return execution_result_pb2.ExecutorOutput()
@@ -64,18 +64,15 @@ class _FakeCrashingExecutorOperator(base_executor_operator.BaseExecutorOperator
   SUPPORTED_PLATFORM_CONFIG_TYPE = None
 
   def run_executor(
-      self, execution_info: base_executor_operator.ExecutionInfo
+      self, execution_info: data_types.ExecutionInfo
   ) -> execution_result_pb2.ExecutorOutput:
     raise FakeError()
 
 
 class _FakeExampleGenLikeDriver(base_driver.BaseDriver):
 
-  def __init__(self, mlmd_connection: metadata.Metadata,
-               pipeline_info: pipeline_pb2.PipelineInfo,
-               pipeline_node: pipeline_pb2.PipelineNode):
-    super(_FakeExampleGenLikeDriver,
-          self).__init__(mlmd_connection, pipeline_info, pipeline_node)
+  def __init__(self, mlmd_connection: metadata.Metadata):
+    super(_FakeExampleGenLikeDriver, self).__init__(mlmd_connection)
     self._self_output = text_format.Parse(
         """
       inputs {
@@ -116,9 +113,7 @@ class _FakeExampleGenLikeDriver(base_driver.BaseDriver):
         }
       }""", pipeline_pb2.NodeInputs())
 
-  def run(self, input_dict: Dict[Text, List[types.Artifact]],
-          output_dict: Dict[Text, List[types.Artifact]],
-          exec_properties: Dict[Text, Any]) -> driver_output_pb2.DriverOutput:
+  def run(self, execution_info) -> driver_output_pb2.DriverOutput:
     # Fake a constant span number, which, on prod, is usually calculated based
     # on date.
     span = 2
@@ -137,7 +132,7 @@ class _FakeExampleGenLikeDriver(base_driver.BaseDriver):
         ] or [-1]) + 1
 
     output_example = copy.deepcopy(
-        output_dict['output_examples'][0].mlmd_artifact)
+        execution_info.output_dict['output_examples'][0].mlmd_artifact)
     output_example.custom_properties['span'].int_value = span
     output_example.custom_properties['version'].int_value = version
     result = driver_output_pb2.DriverOutput()

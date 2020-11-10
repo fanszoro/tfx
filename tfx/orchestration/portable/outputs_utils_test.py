@@ -126,7 +126,7 @@ class OutputUtilsTest(test_utils.TfxTest):
   def testGetExecutorOutputUri(self):
     executor_output_uri = self._output_resolver.get_executor_output_uri(1)
     self.assertRegex(executor_output_uri,
-                     '.*/test_node/execution/1/executor_output.pb')
+                     '.*/test_node/executor_execution/1/executor_output.pb')
     # Verify that executor_output_uri is writable.
     with fileio.open(executor_output_uri, mode='w') as f:
       executor_output = execution_result_pb2.ExecutorOutput()
@@ -144,6 +144,12 @@ class OutputUtilsTest(test_utils.TfxTest):
         self._output_resolver.get_stateful_working_directory())
     self.assertRegex(stateful_working_dir,
                      '.*/test_node/test_run_0/stateful_working_dir')
+
+  def testGetTmpDir(self):
+    tmp_dir = self._output_resolver.make_tmp_dir(1)
+    fileio.exists(tmp_dir)
+    self.assertRegex(tmp_dir,
+                     '.*/test_node/executor_execution/1/.temp/')
 
   def testMakeOutputDirsAndRemoveOutputDirs(self):
     output_artifacts = self._output_resolver.generate_output_artifacts(1)

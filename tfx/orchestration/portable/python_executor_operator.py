@@ -13,7 +13,6 @@
 # limitations under the License.
 """Base class to define how to operator an executor."""
 import sys
-
 from typing import Any, Dict, List, Optional, cast
 
 from absl import logging
@@ -22,8 +21,10 @@ from tfx import types
 from tfx.dsl.components.base import base_executor
 from tfx.dsl.io import fileio
 from tfx.orchestration.portable import base_executor_operator
+from tfx.orchestration.portable import data_types
 from tfx.proto.orchestration import executable_spec_pb2
 from tfx.proto.orchestration import execution_result_pb2
+from tfx.types.value_artifact import ValueArtifact
 from tfx.utils import import_utils
 
 from google.protobuf import message
@@ -100,7 +101,7 @@ class PythonExecutorOperator(base_executor_operator.BaseExecutorOperator):
     self.extra_flags.extend(sys.argv[1:])
 
   def run_executor(
-      self, execution_info: base_executor_operator.ExecutionInfo
+      self, execution_info: data_types.ExecutionInfo
   ) -> execution_result_pb2.ExecutorOutput:
     """Invokers executors given input from the Launcher.
 
@@ -116,9 +117,17 @@ class PythonExecutorOperator(base_executor_operator.BaseExecutorOperator):
     # implementations of executors.
     context = base_executor.BaseExecutor.Context(
         beam_pipeline_args=self.extra_flags,
-        executor_output_uri=execution_info.executor_output_uri,
+        tmp_dir=execution_info.tmp_dir,
+        unique_id=str(execution_info.execution_metadata.id),
+        executor_output_uri=execution_info.execution_output_uri,
         stateful_working_dir=execution_info.stateful_working_dir)
     executor = self._executor_cls(context=context)
+
+    for _, artifact_list in execution_info.input_dict.items():
+      for artifact in artifact_list:
+        if isinstance(artifact, ValueArtifact):
+          # Read ValueArtifact into memory.
+          artifact.read()
 
     result = executor.Do(execution_info.input_dict, execution_info.output_dict,
                          execution_info.exec_properties)
@@ -126,7 +135,7 @@ class PythonExecutorOperator(base_executor_operator.BaseExecutorOperator):
       # If result is not returned from the Do function, then try to
       # read if from the executor_output_uri.
       try:
-        with fileio.open(execution_info.executor_output_uri, 'rb') as f:
+        with fileio.open(execution_info.execution_output_uri, 'rb') as f:
           result = execution_result_pb2.ExecutorOutput.FromString(
               f.read())
       except tf.errors.NotFoundError:

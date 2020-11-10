@@ -2,6 +2,22 @@
 
 ## Major Features and Improvements
 
+## Breaking changes
+
+### For pipeline authors
+
+### For component authors
+
+## Deprecations
+
+## Bug fixes and other changes
+
+## Documentation updates
+
+# Version 0.25.0
+
+## Major Features and Improvements
+
 *   Supported multiple artifacts for Transform's input example and output
     transformed example channels.
 *   Added support for processing specific spans in file-based ExampleGen with
@@ -32,8 +48,36 @@
     ```
     pip install tfx
     ```
+*   Added CloudTuner KFP e2e example running on Google Cloud Platform with
+    distributed tuning.
+*   Migrated BigQueryExampleGen to the new `ReadFromBigQuery` on all runners.
+*   Introduced Kubeflow V2 DAG runner, which is based on
+    [Kubeflow IR spec](https://github.com/kubeflow/pipelines/blob/master/api/v2alpha1/pipeline_spec.proto).
+    Same as `KubeflowDagRunner` it will compile the DSL pipeline into a payload
+    but not trigger the execution locally.
+*   Added 'penguin' example. Penguin example uses Palmer Penguins dataset and
+    classify penguin species using four numeric features.
+*   Iris e2e examples are replaced by penguin examples.
 
 ## Breaking changes
+
+*   Moved the directory that CLI stores pipeline information from
+    ${HOME}/${ORCHESTRATOR} to ${HOME}/tfx/${ORCHESTRATOR}. For example,
+    "~/kubeflow" was changed to "~/tfx/kubeflow". This directory is used to
+    store pipeline information including pipeline ids in the Kubeflow Pipelines
+    cluster which are needed to create runs or update pipelines.
+    These files will be moved automatically when it is first used and no
+    separate action is needed.
+    See https://github.com/tensorflow/tfx/blob/master/docs/guide/cli.md for the
+    detail.
+
+### For pipeline authors
+
+*   N/A
+
+### For component authors
+
+*   N/A
 
 ## Deprecations
 
@@ -45,8 +89,6 @@
 
 *   Introduced dependency to `tensorflow-cloud` Python package, with intention
     to separate out Google Cloud Platform specific extensions.
-*   Depends on `tensorflow-cloud>=0.1,<0.2`.
-*   Depends on `tensorflow-hub>=0.9.0,<0.10`.
 *   Depends on `mmh>=2.2,<3` in container image for potential performance
     improvement for Beam based hashes.
 *   New extra dependencies `[examples]` is required to use codes inside
@@ -56,12 +98,23 @@
 *   Fixed an issue with Transform cache and beam 2.24-2.25 in an interactive
     notebook that caused it to fail.
 *   Scripts - run_component - Added a way to output artifact properties.
-
-### For pipeline authors
-
-### For component authors
+*   Fixed an issue resulting in incorrect cache miss to ExampleGen when no
+    `beam_pipeline_args` is provided.
+*   Changed schema as an optional input channel of Trainer as schema can be
+    accessed from TFT graph too.
+*   Depends on `apache-beam[gcp]>=2.25,<3`.
+*   Depends on `attrs>=19.3.0,<21`.
+*   Depends on `ml-metadata>=0.24,<0.25`.
+*   Depends on `tensorflow-cloud>=0.1,<0.2`.
+*   Depends on `tensorflow-data-validation>=0.25,<0.26`.
+*   Depends on `tensorflow-hub>=0.9.0,<0.10`.
+*   Depends on `tensorflow-model-analysis>=0.25,<0.26`.
+*   Depends on `tensorflow-transform>=0.25,<0.26`.
+*   Depends on `tfx-bsl>=0.25,<0.26`.
 
 ## Documentation updates
+
+*   N/A
 
 # Version 0.24.1
 
